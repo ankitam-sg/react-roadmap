@@ -1,121 +1,182 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from "react";
+import "./App.css"; // keep your existing CSS
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
 
+  // ----------------------------
+  // State Management
+  // ----------------------------
+
+  // Controlled input for new task
+  const [newTask, setNewTask] = useState("");
+
+  // Task list state, persisted in localStorage
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem("tasks");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Track which task is currently in edit mode
+  const [editIndex, setEditIndex] = useState(null);
+
+  // Temporary buffer for editing task text
+  const [editValue, setEditValue] = useState("");
+
+  // Persist tasks whenever they change
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  // ----------------------------
+  // Handlers
+  // ----------------------------
+
+  // Add a new task
+  const handleAddTask = () => {
+    if (newTask.trim() === "") return;
+    setTasks([...tasks, { text: newTask, done: false }]);
+    setNewTask("");
+  };
+
+  // Delete a task
+  const handleDelete = (index) => {
+    setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  // Toggle task done/not done
+  const handleToggle = (index) => {
+    setTasks(
+      tasks.map((task, i) =>
+        i === index ? { ...task, done: !task.done } : task
+      )
+    );
+  };
+
+  // Save edited task
+  const handleSave = (index) => {
+    if (editValue.trim() === "") return;
+    setTasks(
+      tasks.map((task, i) =>
+        i === index ? { ...task, text: editValue } : task
+      )
+    );
+    setEditIndex(null);
+    setEditValue("");
+  };
+
+  // Cancel editing
+  const handleCancel = () => {
+    setEditIndex(null);
+    setEditValue("");
+  };
+
+  // ----------------------------
+  // JSX
+  // ----------------------------
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+    <div className="app-container">
+
+      {/* App title */}
+      <h2 className="app-title">☑️ My Todo List</h2>
+
+      {/* Input section */}
+      <div className="input-group">
+        <input
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          placeholder="Enter a new task"
+          title="Type your task here"
+        />
         <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          className="btn-primary"
+          onClick={handleAddTask}
+          disabled={newTask.trim() === ""}
+          title="Add"
         >
-          Count is {count}
+          Add
         </button>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
+      {/* Task list */}
+      <ul className="task-list">
+        {tasks.map((task, i) => (
+          <li key={i} className="task-item">
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            {/* Left column: checkbox + text */}
+            <div className="task-left">
+              <input
+                type="checkbox"
+                checked={task.done}
+                onChange={() => handleToggle(i)}
+                title={task.done ? "Mark as not done" : "Mark as done"}
+              />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+              {/* Show text or edit input */}
+              {editIndex === i ? (
+                <input
+                  className="task-edit-input"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder="Edit task"
+                  title="Editing task"
+                />
+              ) : (
+                <span className={`task-text ${task.done ? "done" : ""}`}>
+                  {task.text}
+                </span>
+              )}
+            </div>
+
+            {/* Right column: action buttons */}
+            <div className="task-right">
+
+              {/* Edit button */}
+              {editIndex !== i && (
+                <button
+                  className="btn-icon"
+                  onClick={() => { setEditIndex(i); setEditValue(task.text); }}
+                  disabled={task.done}
+                  title="Edit"
+                >
+                  ✏️
+                </button>
+              )}
+
+              {/* Save & Cancel buttons appear only in edit mode */}
+              {editIndex === i && (
+                <>
+                  <button
+                    className="btn-icon"
+                    onClick={() => handleSave(i)}
+                    disabled={editValue.trim() === "" || editValue === task.text}
+                    title="Save"
+                  >
+                    📂
+                  </button>
+                  <button
+                    className="btn-icon"
+                    onClick={handleCancel}
+                    title="Cancel"
+                  >
+                    ❌
+                  </button>
+                </>
+              )}
+
+              {/* Delete button */}
+              <button
+                className="btn-icon"
+                onClick={() => handleDelete(i)}
+                disabled={task.done || editIndex === i}
+                title="Delete"
+              >
+                🗑
+              </button>
+
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
-
-export default App
